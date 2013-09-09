@@ -1,39 +1,9 @@
+extern mod extra;
 use std::libc::{c_int, c_double};
 use std::str::raw;
 use std::ptr;
+use std::c_str::ToCStr;
 mod luac;
-
-pub trait LuaVal {
-	fn push(self, lua: &Lua);
-	fn pop(lua: &Lua) -> Self;
-}
-
-impl LuaVal for float {
-	fn push(self, lua: &Lua) {
-		lua.push_float(self);
-	}
-	fn pop(lua: &Lua) -> float {
-		lua.to_float(-1)
-	}
-}
-
-impl LuaVal for int {
-	fn push(self, lua: &Lua) {
-		lua.push_int(self);
-	}
-	fn pop(lua: &Lua) -> int {
-		lua.to_int(-1)
-	}
-}
-
-impl LuaVal for ~str {
-	fn push(self, lua: &Lua) {
-		lua.push_str(self);
-	}
-	fn pop(lua: &Lua) -> ~str {
-		lua.to_str(-1)
-	}
-}
 
 struct Lua {
 	state: *luac::lua_State
@@ -86,6 +56,42 @@ impl Lua {
 		}
 
 		return self.pcall(0, luac::LUA_MULTRET as int, 0);
+	}
+
+	pub fn new_table(&self) {
+		self.create_table(0, 0);
+	}
+
+	#[fixed_stack_segment]
+	pub fn create_table(&self, narr: int, nrec: int) {
+		unsafe {
+			luac::lua_createtable(self.state, narr as c_int, nrec as c_int);
+		}
+	}
+
+	#[fixed_stack_segment]
+	pub fn set_table(&self, index: int) {
+		unsafe {
+			luac::lua_settable(self.state, index as c_int);
+		}
+	}
+	
+	#[fixed_stack_segment]
+	pub fn next(&self, index: int) -> int {
+		unsafe {
+			luac::lua_next(self.state, index as c_int) as int
+		}
+	}
+
+	pub fn pop(&self, n: int) {
+		return self.set_top(-n - 1);
+	}
+
+	#[fixed_stack_segment]
+	pub fn set_top(&self, index: int) {
+		unsafe {
+			return luac::lua_settop(self.state, index as c_int);
+		}
 	}
 
 	#[fixed_stack_segment]
@@ -147,8 +153,7 @@ impl Lua {
 	#[fixed_stack_segment]
 	pub fn push_str(&self, s: &str) {
 		unsafe {
-			let cs = s.to_c_str();
-			luac::lua_pushstring(self.state, cs.unwrap());
+			s.with_c_str( |cs| luac::lua_pushstring(self.state, cs));
 		}
 	}
 }
@@ -181,5 +186,55 @@ impl ToStr for LuaErr {
 			ErrFunc(ref msg)  => fmt!("Lua error handler error: %s", *msg),
 			Unknown           => fmt!("Lua unknown error"),
 		}
+	}
+}
+
+pub trait LuaPush {
+	fn lua_push(self, lua: &Lua);
+}
+
+pub trait LuaPop {
+	fn lua_pop(lua: &Lua) -> Self;
+}
+
+impl LuaPush for float {
+	fn lua_push(self, lua: &Lua) {
+		lua.push_float(self);
+	}
+}
+
+impl LuaPop for float {
+	fn lua_pop(lua: &Lua) -> float {
+		return lua.to_float(-1);
+	}
+}
+
+impl LuaPush for int {
+	fn lua_push(self, lua: &Lua) {
+		lua.push_int(self);
+	}
+}
+
+impl LuaPop for int {
+	fn lua_pop(lua: &Lua) -> int {
+		return lua.to_int(-1);
+	}
+}
+
+impl LuaPush for ~str {
+	fn lua_push(self, lua: &Lua) {
+		lua.push_str(self);
+	}
+}
+
+impl<'self> LuaPush for &'self str {
+	fn lua_push(self, lua: &Lua) {
+		lua.push_str(self);
+	}
+}
+
+impl LuaPop for ~str {
+	fn lua_pop(lua: &Lua) -> ~str {
+		lua.to_str(-1)
 	}
 }

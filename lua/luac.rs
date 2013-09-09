@@ -29,6 +29,11 @@ extern {
 	fn lua_getfield(L: *lua_State, index: c_int, name: *c_char);
 	fn lua_pcall(L: *lua_State, nargs: c_int, nresults: c_int, errfunc: c_int) -> c_int;
 
+	fn lua_createtable(L: *lua_State, narr: c_int, nrec: c_int);
+	fn lua_newtable(L: *lua_State);
+	fn lua_settable(L: *lua_State, index: c_int);
+	fn lua_next(L: *lua_State, index: c_int) -> c_int;
+
 	fn lua_pushinteger(L: *lua_State, integer: c_int);
 	fn lua_pushnumber(L: *lua_State, number: lua_Number);
 	fn lua_pushlstring(L: *lua_State, string: *c_char, len: size_t);
@@ -38,6 +43,8 @@ extern {
 	fn lua_isnumber(L: *lua_State, index: c_int) -> c_int;
 	fn lua_isstring(L: *lua_State, index: c_int) -> c_int;
 	fn lua_isnil(L: *lua_State, index: c_int) -> c_int;
+
+	fn lua_settop(L: *lua_State, index: c_int);
 
 	fn lua_tointeger(L: *lua_State, index: c_int) -> c_int;
 	fn lua_tonumber(L: *lua_State, index: c_int) -> lua_Number;

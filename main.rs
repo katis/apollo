@@ -1,5 +1,5 @@
 // lua_fn!(funcname params!(foo: int, bar:int, suffix: string) -> int)
-use lua::LuaVal;
+use lua::{LuaPush, LuaPop};
 mod lua;
 
 macro_rules! lua_fn(
@@ -9,13 +9,13 @@ macro_rules! lua_fn(
 			let mut _len = 0;
 
 			$(
-				$arg.push(_lua);
+				$arg.lua_push(_lua);
 				_len += 1; 
 			 )*
 
 			return match _lua.pcall(_len, 1, 0) {
 				Some(_err) => Err(_err),
-				None => Ok(LuaVal::pop(_lua))
+				None => Ok(LuaPop::lua_pop(_lua))
 			}
 		}
 	);
@@ -25,7 +25,7 @@ macro_rules! lua_fn(
 			let mut _len = 0;
 
 			$(
-				$arg.push(_lua);
+				$arg.lua_push(_lua);
 				_len += 1;
 			)*
 
@@ -40,6 +40,10 @@ lua_fn!(
 
 lua_fn!(
 	noret(a: int, b: float) -> Option<LuaErr>
+)
+
+lua_fn!(
+	concat(a: &str, b: &str) -> Result<~str, LuaErr>
 )
 
 fn main() {
@@ -58,5 +62,10 @@ fn main() {
 	match noret(12, 42.78, lua) {
 		Some(err) => { println(err.to_str()); return; },
 		_ => {}
+	}
+
+	match concat("foo ", "bar", lua) {
+		Ok(s) => { println(s); },
+		Err(err) => { println(err.to_str()); return; }
 	}
 }
