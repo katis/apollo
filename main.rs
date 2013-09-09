@@ -46,6 +46,10 @@ lua_fn!(
 	concat(a: &str, b: &str) -> Result<~str, LuaErr>
 )
 
+lua_fn!(
+	reverse(a: ~[float]) -> Result<~[float], LuaErr>
+)
+
 fn main() {
 	let lua = lua::New();
 
@@ -66,6 +70,13 @@ fn main() {
 
 	match concat("foo ", "bar", lua) {
 		Ok(s) => { println(s); },
+		Err(err) => { println(err.to_str()); return; }
+	}
+
+	match reverse(~[12.45, 45.12, 12.1, 69.69], lua) {
+		Ok(vect) => {
+			println(fmt!("%?", vect));
+		},
 		Err(err) => { println(err.to_str()); return; }
 	}
 }

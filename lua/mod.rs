@@ -2,6 +2,7 @@ extern mod extra;
 use std::libc::{c_int, c_double};
 use std::str::raw;
 use std::ptr;
+use std::vec::OwnedVector;
 use std::c_str::ToCStr;
 mod luac;
 
@@ -77,14 +78,14 @@ impl Lua {
 	}
 	
 	#[fixed_stack_segment]
-	pub fn next(&self, index: int) -> int {
+	pub fn next(&self, index: int) -> bool {
 		unsafe {
-			luac::lua_next(self.state, index as c_int) as int
+			luac::lua_next(self.state, index as c_int) != 0
 		}
 	}
 
 	pub fn pop(&self, n: int) {
-		return self.set_top(-n - 1);
+		return self.set_top( -(n) - 1 );
 	}
 
 	#[fixed_stack_segment]
@@ -156,6 +157,13 @@ impl Lua {
 			s.with_c_str( |cs| luac::lua_pushstring(self.state, cs));
 		}
 	}
+
+	#[fixed_stack_segment]
+	pub fn push_nil(&self) {
+		unsafe {
+			luac::lua_pushnil(self.state);
+		}
+	}
 }
 
 impl Drop for Lua {
@@ -190,7 +198,7 @@ impl ToStr for LuaErr {
 }
 
 pub trait LuaPush {
-	fn lua_push(self, lua: &Lua);
+	fn lua_push(&self, lua: &Lua);
 }
 
 pub trait LuaPop {
@@ -198,8 +206,8 @@ pub trait LuaPop {
 }
 
 impl LuaPush for float {
-	fn lua_push(self, lua: &Lua) {
-		lua.push_float(self);
+	fn lua_push(&self, lua: &Lua) {
+		lua.push_float(*self);
 	}
 }
 
@@ -210,8 +218,8 @@ impl LuaPop for float {
 }
 
 impl LuaPush for int {
-	fn lua_push(self, lua: &Lua) {
-		lua.push_int(self);
+	fn lua_push(&self, lua: &Lua) {
+		lua.push_int(*self);
 	}
 }
 
@@ -222,19 +230,47 @@ impl LuaPop for int {
 }
 
 impl LuaPush for ~str {
-	fn lua_push(self, lua: &Lua) {
-		lua.push_str(self);
+	fn lua_push(&self, lua: &Lua) {
+		lua.push_str(*self);
 	}
 }
 
 impl<'self> LuaPush for &'self str {
-	fn lua_push(self, lua: &Lua) {
-		lua.push_str(self);
+	fn lua_push(&self, lua: &Lua) {
+		lua.push_str(*self);
 	}
 }
 
 impl LuaPop for ~str {
 	fn lua_pop(lua: &Lua) -> ~str {
 		lua.to_str(-1)
+	}
+}
+
+impl<T: LuaPush> LuaPush for ~[T] {
+	fn lua_push(&self, lua: &Lua) {
+		lua.new_table();
+		let mut i: int = 1;
+		for v in self.iter() {
+			lua.push_int(i);
+			v.lua_push(lua);
+			lua.set_table(-3);
+			i += 1;
+		}
+	}
+}
+
+impl<T: LuaPop> LuaPop for ~[T] {
+	fn lua_pop(lua: &Lua) -> ~[T] {
+		let mut vect = ~[];
+		lua.push_nil();
+		while lua.next(-2) {
+			let v = LuaPop::lua_pop(lua);
+			lua.pop(1);
+			lua.to_int(-1);
+			vect.push(v);
+		}
+
+		return vect;
 	}
 }
