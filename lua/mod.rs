@@ -21,6 +21,42 @@ pub fn New() -> ~Lua {
 
 impl Lua {
 	#[fixed_stack_segment]
+	pub fn index_type(&self, index: int) -> LuaType {
+		unsafe {
+			let t = luac::lua_type(self.state, index as c_int);
+			return match t {
+				luac::LUA_TNONE => TNone,
+				luac::LUA_TNIL => Nil,
+				luac::LUA_TBOOLEAN => Boolean,
+				luac::LUA_TLIGHTUSERDATA => LightUserData,
+				luac::LUA_TNUMBER => Number,
+				luac::LUA_TSTRING => String,
+				luac::LUA_TTABLE => Table,
+				luac::LUA_TFUNCTION => Function,
+				luac::LUA_TUSERDATA => UserData,
+				luac::LUA_TTHREAD => Thread,
+				i => TUnknown(i as int),
+			}
+		}
+	}
+
+	pub fn index_str(&self, index: int) -> ~str {
+		match self.index_type(index) {
+			TNone         => ~"none: none",
+			Nil           => ~"nil: nil",
+			Boolean       => fmt!("bool: %?", self.to_bool(index)),
+			LightUserData => ~"light user data",
+			Number        => fmt!("number: %f", self.to_float(index)),
+			String        => fmt!("string: %s", self.to_str(index)),
+			Table         => ~"table: <unimplemented>",
+			Function      => ~"function: <unimplemented>",
+			UserData      => ~"userdata",
+			Thread        => ~"thread",
+			TUnknown(i)   => fmt!("unknown: %d", i)
+		}
+	}
+
+	#[fixed_stack_segment]
 	pub fn pcall(&self, nargs: int, nresults: int, errfunci: int) -> Option<LuaErr> {
 		unsafe {
 			let err = luac::lua_pcall(self.state,
@@ -38,6 +74,13 @@ impl Lua {
 		unsafe {
 			let c_name = name.to_c_str();
 			luac::lua_getfield(self.state, index as c_int, c_name.unwrap());
+		}
+	}
+
+	#[fixed_stack_segment]
+	pub fn get_top(&self) -> int {
+		unsafe {
+			luac::lua_gettop(self.state) as int
 		}
 	}
 
@@ -76,6 +119,20 @@ impl Lua {
 			luac::lua_settable(self.state, index as c_int);
 		}
 	}
+
+	#[fixed_stack_segment]
+	pub fn raw_set(&self, index: int) {
+		unsafe {
+			luac::lua_rawset(self.state, index as c_int);
+		}
+	}
+
+	#[fixed_stack_segment]
+	pub fn raw_set_i(&self, index: int, n: int) {
+		unsafe {
+			luac::lua_rawseti(self.state, index as c_int, n as c_int);
+		}
+	}
 	
 	#[fixed_stack_segment]
 	pub fn next(&self, index: int) -> bool {
@@ -92,6 +149,13 @@ impl Lua {
 	pub fn set_top(&self, index: int) {
 		unsafe {
 			return luac::lua_settop(self.state, index as c_int);
+		}
+	}
+
+	#[fixed_stack_segment]
+	pub fn to_bool(&self, index: int) -> bool {
+		unsafe {
+			luac::lua_toboolean(self.state, index as c_int) != 0
 		}
 	}
 
@@ -138,9 +202,16 @@ impl Lua {
 	}
 
 	#[fixed_stack_segment]
-	pub fn push_int(&self, index: int) {
+	pub fn push_bool(&self, b: bool) {
 		unsafe {
-			luac::lua_pushinteger(self.state, index as c_int);
+			luac::lua_pushinteger(self.state, match b {true => 1, false => 0} as c_int);
+		}
+	}
+
+	#[fixed_stack_segment]
+	pub fn push_int(&self, integer: int) {
+		unsafe {
+			luac::lua_pushinteger(self.state, integer as c_int);
 		}
 	}
 
@@ -171,6 +242,38 @@ impl Drop for Lua {
 	fn drop(&self) {
 		unsafe {
 			luac::lua_close(self.state);
+		}
+	}
+}
+
+pub enum LuaType {
+	TNone,
+	Nil,
+	Boolean,
+	LightUserData,
+	Number,
+	String,
+	Table,
+	Function,
+	UserData,
+	Thread,
+	TUnknown(int)
+}
+
+impl ToStr for LuaType {
+	fn to_str(&self) -> ~str {
+		match *self {
+			TNone           => ~"none",
+			Nil             => ~"nil",
+			Boolean         => ~"boolean",
+			LightUserData   => ~"light user data",
+			Number          => ~"number",
+			String          => ~"string",
+			Table           => ~"table",
+			Function        => ~"function",
+			UserData        => ~"user data",
+			Thread          => ~"thread",
+			TUnknown(ref t) => fmt!("unknown: %d", *t)
 		}
 	}
 }
@@ -250,11 +353,11 @@ impl LuaPop for ~str {
 impl<T: LuaPush> LuaPush for ~[T] {
 	fn lua_push(&self, lua: &Lua) {
 		lua.new_table();
+
 		let mut i: int = 1;
 		for v in self.iter() {
-			lua.push_int(i);
 			v.lua_push(lua);
-			lua.set_table(-3);
+			lua.raw_set_i(-2, i);
 			i += 1;
 		}
 	}
@@ -263,14 +366,23 @@ impl<T: LuaPush> LuaPush for ~[T] {
 impl<T: LuaPop> LuaPop for ~[T] {
 	fn lua_pop(lua: &Lua) -> ~[T] {
 		let mut vect = ~[];
+
 		lua.push_nil();
-		while lua.next(-2) {
-			let v = LuaPop::lua_pop(lua);
+		while lua.next(1) {
+			vect.push( LuaPop::lua_pop(lua) );
 			lua.pop(1);
-			lua.to_int(-1);
-			vect.push(v);
 		}
 
 		return vect;
+	}
+}
+
+pub fn print_stack(lua: &Lua) {
+	let top = lua.get_top();
+	if top == 0 { return; }
+
+	println("");
+	for i in range(1, top + 1) {
+		printf!("%d - %s\n", i, lua.index_str(i))
 	}
 }

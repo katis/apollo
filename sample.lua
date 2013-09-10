@@ -10,12 +10,12 @@ function concat(a, b)
 	return a .. b
 end
 
-function reverse(arr)
+function reverseplus(arr, p)
 	local newArr = {}
 	local len = table.getn(arr)
 
 	for i, v in ipairs(arr) do
-		newArr[len - i] = v
+		newArr[len - i] = v + p
 	end
 
 	return newArr
