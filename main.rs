@@ -5,7 +5,7 @@ mod lua;
 
 macro_rules! lua_fn(
 	($func:ident($( $arg:ident: $argty:ty ),* ) -> Result<$rty:ty, LuaErr>) => (
-		fn $func ( $( $arg: $argty, )* _lua: &lua::Lua ) -> Result<$rty, lua::LuaErr> {
+		fn $func ( $( $arg: $argty, )* _lua: &lua::LuaState ) -> Result<$rty, lua::LuaErr> {
 			_lua.get_global(stringify!($func));
 			match _lua.index_type(_lua.get_top()) {
 				lua::Function => {},
@@ -28,7 +28,7 @@ macro_rules! lua_fn(
 		}
 	);
 	($func:ident($( $arg:ident: $argty:ty ),* ) -> Option<LuaErr>) => (
-		fn $func ( $( $arg: $argty, )* _lua: &lua::Lua ) -> Option<lua::LuaErr> {
+		fn $func ( $( $arg: $argty, )* _lua: &lua::LuaState ) -> Option<lua::LuaErr> {
 			_lua.get_global(stringify!($func));
 			let mut _len = 0;
 
