@@ -66,6 +66,7 @@ extern {
 	fn lua_isstring(L: *lua_State, index: c_int) -> c_int;
 	fn lua_isnil(L: *lua_State, index: c_int) -> c_int;
 
+	fn lua_remove(L: *lua_State, index: c_int);
 	fn lua_settop(L: *lua_State, index: c_int);
 
 	fn lua_toboolean(L: *lua_State, index: c_int) -> c_int;

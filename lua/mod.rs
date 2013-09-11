@@ -149,6 +149,13 @@ impl Lua {
 		}
 	}
 
+	#[fixed_stack_segment]
+	pub fn remove(&self, index: int) {
+		unsafe {
+			luac::lua_remove(self.state, index as c_int);
+		}
+	}
+
 	pub fn pop(&self, n: int) {
 		return self.set_top( -(n) - 1 );
 	}
@@ -376,9 +383,10 @@ impl<T: LuaTo> LuaTo for ~[T] {
 		let mut vect = ~[];
 
 		lua.push_nil();
+		if index != -1 { lua.insert(index); }
 		while lua.next(index - 1) {
 			vect.push( LuaTo::lua_to(lua, index) );
-			lua.pop(1);
+			lua.remove(index);
 		}
 
 		return vect;
@@ -426,7 +434,7 @@ impl<K: LuaTo + Hash + Eq, V: LuaTo> LuaTo for HashMap<K, V> {
 		if index != -1 { lua.insert(index); }
 		while lua.next(index - 1) {
 			let v: V = LuaTo::lua_to(lua, index);
-			lua.pop(1);
+			lua.remove(index);
 
 			let k: K = LuaTo::lua_to(lua, index);
 			m.swap(k, v);
