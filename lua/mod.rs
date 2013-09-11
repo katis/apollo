@@ -103,6 +103,13 @@ impl Lua {
 		return self.pcall(0, luac::LUA_MULTRET as int, 0);
 	}
 
+	#[fixed_stack_segment]
+	pub fn insert(&self, index: int) {
+		unsafe {
+			luac::lua_insert(self.state, index as c_int);
+		}
+	}
+
 	pub fn new_table(&self) {
 		self.create_table(0, 0);
 	}
@@ -369,7 +376,7 @@ impl<T: LuaTo> LuaTo for ~[T] {
 		let mut vect = ~[];
 
 		lua.push_nil();
-		while lua.next(1) {
+		while lua.next(index - 1) {
 			vect.push( LuaTo::lua_to(lua, index) );
 			lua.pop(1);
 		}
@@ -413,15 +420,15 @@ impl<K: LuaPush + Hash + Eq, V: LuaPush> LuaPush for HashMap<K, V> {
 
 impl<K: LuaTo + Hash + Eq, V: LuaTo> LuaTo for HashMap<K, V> {
 	fn lua_to(lua: &Lua, index: int) -> HashMap<K, V> {
-		//println("QWERQWERQWER");
-
 		let mut m: HashMap<K, V> = HashMap::new();
 
 		lua.push_nil();
-		while lua.next(1) {
+		if index != -1 { lua.insert(index); }
+		while lua.next(index - 1) {
 			let v: V = LuaTo::lua_to(lua, index);
-			let k: K = LuaTo::lua_to(lua, index -1);
 			lua.pop(1);
+
+			let k: K = LuaTo::lua_to(lua, index);
 			m.swap(k, v);
 		}
 		return m;

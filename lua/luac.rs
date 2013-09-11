@@ -44,6 +44,8 @@ extern {
 	fn lua_type(L: *lua_State, index: c_int) -> c_int;
 	fn lua_gettop(L: *lua_State) -> c_int;
 
+	fn lua_insert(L: *lua_State, index: c_int);
+
 	fn lua_createtable(L: *lua_State, narr: c_int, nrec: c_int);
 	fn lua_newtable(L: *lua_State);
 	fn lua_settable(L: *lua_State, index: c_int);
