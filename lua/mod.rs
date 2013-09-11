@@ -4,6 +4,7 @@ use std::str::raw;
 use std::ptr;
 use std::vec::OwnedVector;
 use std::c_str::ToCStr;
+use std::hashmap::HashMap;
 mod luac;
 
 struct Lua {
@@ -177,7 +178,7 @@ impl Lua {
 	#[fixed_stack_segment]
 	pub fn to_float(&self, index: int) -> float {
 		unsafe {
-			return luac::lua_tonumber(self.state, index as c_int) as float;
+			luac::lua_tonumber(self.state, index as c_int) as float
 		}
 	}
 
@@ -304,8 +305,8 @@ pub trait LuaPush {
 	fn lua_push(&self, lua: &Lua);
 }
 
-pub trait LuaPop {
-	fn lua_pop(lua: &Lua) -> Self;
+pub trait LuaTo {
+	fn lua_to(lua: &Lua, index: int) -> Self;
 }
 
 impl LuaPush for float {
@@ -314,9 +315,9 @@ impl LuaPush for float {
 	}
 }
 
-impl LuaPop for float {
-	fn lua_pop(lua: &Lua) -> float {
-		return lua.to_float(-1);
+impl LuaTo for float {
+	fn lua_to(lua: &Lua, index: int) -> float {
+		return lua.to_float(index);
 	}
 }
 
@@ -326,9 +327,9 @@ impl LuaPush for int {
 	}
 }
 
-impl LuaPop for int {
-	fn lua_pop(lua: &Lua) -> int {
-		return lua.to_int(-1);
+impl LuaTo for int {
+	fn lua_to(lua: &Lua, index: int) -> int {
+		return lua.to_int(index);
 	}
 }
 
@@ -344,9 +345,9 @@ impl<'self> LuaPush for &'self str {
 	}
 }
 
-impl LuaPop for ~str {
-	fn lua_pop(lua: &Lua) -> ~str {
-		lua.to_str(-1)
+impl LuaTo for ~str {
+	fn lua_to(lua: &Lua, index: int) -> ~str {
+		lua.to_str(index)
 	}
 }
 
@@ -363,13 +364,13 @@ impl<T: LuaPush> LuaPush for ~[T] {
 	}
 }
 
-impl<T: LuaPop> LuaPop for ~[T] {
-	fn lua_pop(lua: &Lua) -> ~[T] {
+impl<T: LuaTo> LuaTo for ~[T] {
+	fn lua_to(lua: &Lua, index: int) -> ~[T] {
 		let mut vect = ~[];
 
 		lua.push_nil();
 		while lua.next(1) {
-			vect.push( LuaPop::lua_pop(lua) );
+			vect.push( LuaTo::lua_to(lua, index) );
 			lua.pop(1);
 		}
 
@@ -377,9 +378,59 @@ impl<T: LuaPop> LuaPop for ~[T] {
 	}
 }
 
+impl<'self, K: LuaPush + Hash + Eq, V: LuaPush> LuaPush for &'self HashMap<K, V> {
+	fn lua_push(&self, lua: &Lua) {
+		lua.new_table();
+
+		for kv in self.iter() {
+			match kv {
+				(k, v) => {
+					k.lua_push(lua);
+					v.lua_push(lua);
+					lua.raw_set(-3);
+				}
+			};
+		}
+	}
+}
+
+impl<K: LuaPush + Hash + Eq, V: LuaPush> LuaPush for HashMap<K, V> {
+	fn lua_push(&self, lua: &Lua) {
+		lua.new_table();
+
+		for kv in self.iter() {
+			match kv {
+				(k, v) => {
+					k.lua_push(lua);
+					v.lua_push(lua);
+
+					lua.raw_set(-3);
+				}
+			};
+		}
+	}
+}
+
+impl<K: LuaTo + Hash + Eq, V: LuaTo> LuaTo for HashMap<K, V> {
+	fn lua_to(lua: &Lua, index: int) -> HashMap<K, V> {
+		//println("QWERQWERQWER");
+
+		let mut m: HashMap<K, V> = HashMap::new();
+
+		lua.push_nil();
+		while lua.next(1) {
+			let v: V = LuaTo::lua_to(lua, index);
+			let k: K = LuaTo::lua_to(lua, index -1);
+			lua.pop(1);
+			m.swap(k, v);
+		}
+		return m;
+	}
+}
+
 pub fn print_stack(lua: &Lua) {
 	let top = lua.get_top();
-	if top == 0 { return; }
+	if top == 0 { println("stack is empty"); return; }
 
 	println("");
 	for i in range(1, top + 1) {

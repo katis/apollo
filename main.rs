@@ -1,5 +1,6 @@
-// lua_fn!(funcname params!(foo: int, bar:int, suffix: string) -> int)
-use lua::{LuaPush, LuaPop};
+extern mod extra;
+use std::hashmap::HashMap;
+use lua::{LuaPush, LuaTo};
 mod lua;
 
 macro_rules! lua_fn(
@@ -21,7 +22,7 @@ macro_rules! lua_fn(
 			let mut _ret: Result<$rty, lua::LuaErr>;
 			match _lua.pcall(_len, 1, 0) {
 				Some(_err) => { _ret = Err(_err); },
-				None => {  _ret = Ok(LuaPop::lua_pop(_lua)); _lua.pop(1); }
+				None => { _ret = Ok(LuaTo::lua_to(_lua, -1)); _lua.pop(1); }
 			};
 			return _ret;
 		}
@@ -57,6 +58,10 @@ lua_fn!(
 	reverseplus(a: ~[float], b: int) -> Result<~[float], LuaErr>
 )
 
+lua_fn!(
+	swapper(m: HashMap<~str, float>) -> Result<HashMap<float, ~str>, LuaErr>
+)
+
 fn main() {
 	let lua = lua::New();
 
@@ -87,6 +92,24 @@ fn main() {
 			println(fmt!("%?", vect));
 		},
 		Err(err) => { printf!("reverseplus error: %s\n", err.to_str()); return; }
+	}
+
+	let mut m: HashMap<~str, float> = HashMap::new();
+	m.swap(~"foi", 1.01);
+	m.swap(~"tats", 74.75);
+	m.swap(~"sis", 51.5);
+
+	match swapper(m, lua) {
+		Ok(newm) => {
+			for kv in newm.iter() {
+				match(kv) {
+					(k, v) => {
+						printf!("%?, %?\n", *k, *v);
+					}
+				}
+			}
+		},
+		Err(err) => { printf!("swap error: %s\n", err.to_str()); return; }
 	}
 
 	lua::print_stack(lua);

@@ -20,3 +20,13 @@ function reverseplus(arr, p)
 
 	return newArr
 end
+
+function swapper(arr)
+	local newArr = {}
+
+	for k, v in pairs(arr) do
+		newArr[v] = k
+	end
+
+	return newArr
+end
