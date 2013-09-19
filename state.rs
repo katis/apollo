@@ -5,36 +5,43 @@ use std::ptr;
 use std::c_str::ToCStr;
 mod luac;
 
-struct LuaState {
-	state: *luac::lua_State
+struct State {
+	priv state: *luac::lua_State
 }
 
 #[fixed_stack_segment]
-pub fn New() -> ~LuaState {
+pub fn NewState() -> ~State {
 	unsafe {
 		let state = luac::luaL_newstate();
-		luac::luaL_openlibs(state);
-		return ~LuaState { state: state };
+		return ~State { state: state };
 	}
 }
 
-impl LuaState {
+impl State {
+
+	#[fixed_stack_segment]
+	pub fn open_libs(&self) {
+		unsafe {
+			luac::luaL_openlibs(self.state);
+		}
+	}
+
 	#[fixed_stack_segment]
 	pub fn index_type(&self, index: int) -> LuaType {
 		unsafe {
 			let t = luac::lua_type(self.state, index as c_int);
 			return match t {
-				luac::LUA_TNONE => TNone,
-				luac::LUA_TNIL => Nil,
-				luac::LUA_TBOOLEAN => Boolean,
+				luac::LUA_TNONE          => TNone,
+				luac::LUA_TNIL           => Nil,
+				luac::LUA_TBOOLEAN       => Boolean,
 				luac::LUA_TLIGHTUSERDATA => LightUserData,
-				luac::LUA_TNUMBER => Number,
-				luac::LUA_TSTRING => String,
-				luac::LUA_TTABLE => Table,
-				luac::LUA_TFUNCTION => Function,
-				luac::LUA_TUSERDATA => UserData,
-				luac::LUA_TTHREAD => Thread,
-				i => TUnknown(i as int),
+				luac::LUA_TNUMBER        => Number,
+				luac::LUA_TSTRING        => String,
+				luac::LUA_TTABLE         => Table,
+				luac::LUA_TFUNCTION      => Function,
+				luac::LUA_TUSERDATA      => UserData,
+				luac::LUA_TTHREAD        => Thread,
+				i                        => TUnknown(i as int),
 			}
 		}
 	}
@@ -56,11 +63,16 @@ impl LuaState {
 	}
 
 	#[fixed_stack_segment]
-	pub fn pcall(&self, nargs: int, nresults: int, errfunci: int) -> Option<LuaErr> {
+	pub fn pcall(&self, nargs: int, nresults: int, errfunci: int) {
 		unsafe {
-			let err = luac::lua_pcall(self.state,
-				nargs as c_int, nresults as c_int, errfunci as c_int);
-			return self.maybe_err(err);
+			let err = self.maybe_err(luac::lua_pcall(self.state,
+				nargs as c_int, nresults as c_int, errfunci as c_int));
+			match err {
+				Some(msg) => {
+					fail!(fmt!("pcall failed: %s", msg.to_str()));
+				},
+				_ => {}
+			};
 		}
 	}
 
@@ -84,21 +96,20 @@ impl LuaState {
 	}
 
 	#[fixed_stack_segment]
-	pub fn load_file(&self, filename: &str) -> Option<LuaErr> {
+	pub fn load_file(&self, filename: &str) {
 		unsafe {
 			let cfname = filename.to_c_str();
-			return self.maybe_err(luac::luaL_loadfile(self.state, cfname.unwrap()));
+			let err = self.maybe_err(luac::luaL_loadfile(self.state, cfname.unwrap()));
+			match err {
+				Some(msg) => { fail!(fmt!("load_file failed: %s", msg.to_str())); },
+				_ => {}
+			}
 		}
 	}
 
-	pub fn do_file(&self, filename: &str) -> Option<LuaErr> {
-		let err = self.load_file(filename);
-		match err {
-			Some(_) => { return err; },
-			_ => {}
-		}
-
-		return self.pcall(0, luac::LUA_MULTRET as int, 0);
+	pub fn do_file(&self, filename: &str) {
+		self.load_file(filename);
+		self.pcall(0, luac::LUA_MULTRET as int, 0);
 	}
 
 	#[fixed_stack_segment]
@@ -168,29 +179,57 @@ impl LuaState {
 	#[fixed_stack_segment]
 	pub fn to_bool(&self, index: int) -> bool {
 		unsafe {
-			luac::lua_toboolean(self.state, index as c_int) != 0
+			match self.index_type(index) {
+				Boolean => {
+					return luac::lua_toboolean(self.state, index as c_int) != 0
+				},
+				t => {
+					return fail!(fmt!("to_bool failed because stack has %s", t.to_str()));
+				}
+			};
 		}
 	}
 
 	#[fixed_stack_segment]
 	pub fn to_int(&self, index: int) -> int {
 		unsafe {
-			return luac::lua_tointeger(self.state, index as c_int) as int;
+			match self.index_type(index) {
+				Number => {
+					return luac::lua_tointeger(self.state, index as c_int) as int;
+				},
+				t => {
+					return fail!(fmt!("to_int failed because stack has %s", t.to_str()));
+				}
+			};
 		}
 	}
 
 	#[fixed_stack_segment]
 	pub fn to_str(&self, index: int) -> ~str{
 		unsafe {
-			let strPtr = luac::lua_tolstring(self.state, index as c_int, ptr::null());
-			return raw::from_c_str(strPtr);
+			match self.index_type(index) {
+				String => {
+					let strPtr = luac::lua_tolstring(self.state, index as c_int, ptr::null());
+					return raw::from_c_str(strPtr);
+				},
+				t => {
+					return fail!(fmt!("to_str failed because stack has %s", t.to_str()));
+				}
+			}
 		}
 	}
 
 	#[fixed_stack_segment]
 	pub fn to_float(&self, index: int) -> float {
 		unsafe {
-			luac::lua_tonumber(self.state, index as c_int) as float
+			match self.index_type(index) {
+				Number => {
+					return luac::lua_tonumber(self.state, index as c_int) as float;
+				},
+				t => {
+					return fail!(fmt!("to_float failed because stack has %s", t.to_str()));
+				}
+			}
 		}
 	}
 
@@ -250,9 +289,9 @@ impl LuaState {
 	}
 }
 
-impl Drop for LuaState {
+impl Drop for State {
 	#[fixed_stack_segment]
-	fn drop(&self) {
+	fn drop(&mut self) {
 		unsafe {
 			luac::lua_close(self.state);
 		}

@@ -30,3 +30,11 @@ function swapper(arr)
 
 	return newArr
 end
+
+function call(f, o)
+	f(o, 123)
+end
+
+function retself(s)
+	return s
+end
