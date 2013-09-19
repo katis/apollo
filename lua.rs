@@ -153,57 +153,6 @@ impl<K: LuaTo + Hash + Eq, V: LuaTo> LuaTo for HashMap<K, V> {
 	}
 }
 
-#[test]
-fn int_to_and_from_lua() {
-	let lua = state::New();
-	let i = 777;
-
-	i.lua_push(lua);
-	if state.get_top() != 1 {
-		fail!("State.push_int failed");
-	}
-
-	let num: int = LuaTo::lua_to(lua, -1);
-	state.pop(1);
-	if num != i {
-		fail!("State.to_int failed");
-	}
-}
-
-#[test]
-fn float_to_and_from_lua() {
-	let lua = state::New();
-	let f: float = 0.123;
-
-	f.lua_push(lua);
-	if state.get_top() != 1 {
-		fail!("State.push_int failed");
-	}
-
-	let num: float = LuaTo::lua_to(lua, -1);
-	state.pop(1);
-	if num != f {
-		fail!("State.to_int failed");
-	}
-}
-
-#[test]
-fn str_to_and_from_lua() {
-	let lua = state::New();
-	let s = ~"foobar";
-
-	state.push_str(s);
-	if state.get_top() != 1 {
-		fail!("State.push_str");
-	}
-
-	let st: ~str = LuaTo::lua_to(lua, -1);
-	state.pop(1);
-	if st != s {
-		fail!("State.to_str failed");
-	}
-}
-
 pub fn print_stack(state: &state::State) {
 	let top = state.get_top();
 	if top == 0 { println("stack is empty"); return; }

@@ -33,7 +33,7 @@ pub type lua_Number = c_double;
 
 #[link_args = "-lluajit-5.1"]
 extern {
-	pub fn luaL_newstate() -> *lua_State;
+	fn luaL_newstate() -> *lua_State;
 	fn lua_close(L: *lua_State);
 
 	fn luaL_openlibs(L: *lua_State);
