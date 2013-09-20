@@ -9,7 +9,7 @@ struct State {
 	priv state: *luac::lua_State
 }
 
-#[fixed_stack_segment]
+#[fixed_stack_segment] #[inline(never)]
 pub fn NewState() -> ~State {
 	unsafe {
 		let state = luac::luaL_newstate();
@@ -19,14 +19,14 @@ pub fn NewState() -> ~State {
 
 impl State {
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn open_libs(&self) {
 		unsafe {
 			luac::luaL_openlibs(self.state);
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn index_type(&self, index: int) -> LuaType {
 		unsafe {
 			let t = luac::lua_type(self.state, index as c_int);
@@ -62,7 +62,7 @@ impl State {
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn pcall(&self, nargs: int, nresults: int, errfunci: int) {
 		unsafe {
 			let err = self.maybe_err(luac::lua_pcall(self.state,
@@ -80,7 +80,7 @@ impl State {
 		self.get_field(luac::LUA_GLOBALSINDEX as int, name);
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn get_field(&self, index: int, name: &str) {
 		unsafe {
 			let c_name = name.to_c_str();
@@ -88,14 +88,14 @@ impl State {
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn get_top(&self) -> int {
 		unsafe {
 			luac::lua_gettop(self.state) as int
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn load_file(&self, filename: &str) {
 		unsafe {
 			let cfname = filename.to_c_str();
@@ -112,7 +112,7 @@ impl State {
 		self.pcall(0, luac::LUA_MULTRET as int, 0);
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn do_str(&self, s: &str) {
 		unsafe {
 			s.with_c_str( |cs| luac::luaL_loadstring(self.state, cs) );
@@ -121,7 +121,7 @@ impl State {
 		self.pcall(0, luac::LUA_MULTRET as int, 0);
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn insert(&self, index: int) {
 		unsafe {
 			luac::lua_insert(self.state, index as c_int);
@@ -132,42 +132,42 @@ impl State {
 		self.create_table(0, 0);
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn create_table(&self, narr: int, nrec: int) {
 		unsafe {
 			luac::lua_createtable(self.state, narr as c_int, nrec as c_int);
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn set_table(&self, index: int) {
 		unsafe {
 			luac::lua_settable(self.state, index as c_int);
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn raw_set(&self, index: int) {
 		unsafe {
 			luac::lua_rawset(self.state, index as c_int);
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn raw_set_i(&self, index: int, n: int) {
 		unsafe {
 			luac::lua_rawseti(self.state, index as c_int, n as c_int);
 		}
 	}
 	
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn next(&self, index: int) -> bool {
 		unsafe {
 			luac::lua_next(self.state, index as c_int) != 0
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn remove(&self, index: int) {
 		unsafe {
 			luac::lua_remove(self.state, index as c_int);
@@ -178,14 +178,14 @@ impl State {
 		return self.set_top( -(n) - 1 );
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn set_top(&self, index: int) {
 		unsafe {
 			return luac::lua_settop(self.state, index as c_int);
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn to_bool(&self, index: int) -> bool {
 		unsafe {
 			match self.index_type(index) {
@@ -199,7 +199,7 @@ impl State {
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn to_int(&self, index: int) -> int {
 		unsafe {
 			match self.index_type(index) {
@@ -213,7 +213,7 @@ impl State {
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn to_str(&self, index: int) -> ~str{
 		unsafe {
 			match self.index_type(index) {
@@ -228,7 +228,7 @@ impl State {
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn to_float(&self, index: int) -> float {
 		unsafe {
 			match self.index_type(index) {
@@ -262,35 +262,35 @@ impl State {
 		return err;
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn push_bool(&self, b: bool) {
 		unsafe {
 			luac::lua_pushinteger(self.state, match b {true => 1, false => 0} as c_int);
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn push_int(&self, integer: int) {
 		unsafe {
 			luac::lua_pushinteger(self.state, integer as c_int);
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn push_float(&self, a: float) {
 		unsafe {
 			luac::lua_pushnumber(self.state, a as c_double);
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn push_str(&self, s: &str) {
 		unsafe {
 			s.with_c_str( |cs| luac::lua_pushstring(self.state, cs));
 		}
 	}
 
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	pub fn push_nil(&self) {
 		unsafe {
 			luac::lua_pushnil(self.state);
@@ -299,7 +299,7 @@ impl State {
 }
 
 impl Drop for State {
-	#[fixed_stack_segment]
+	#[fixed_stack_segment] #[inline(never)]
 	fn drop(&mut self) {
 		unsafe {
 			luac::lua_close(self.state);
