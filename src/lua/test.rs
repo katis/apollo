@@ -2,10 +2,10 @@ use std::hashmap::HashMap;
 mod macros;
 mod lua;
 
-lua_fn!( noret(a: int, b: float) )
-
 #[test]
 fn test_noret() {
+	lua_fn!( noret(a: int, b: float) )
+
 	let lua = lua::New();
 	lua.state.do_str("
 		function noret(a, b)
@@ -16,10 +16,11 @@ fn test_noret() {
 	assert!(lua.state.get_top() == 0);
 }
 
-lua_fn!( add(a: int, b: int) -> int )
 
 #[test]
 fn test_add() {
+	lua_fn!( add(a: int, b: int) -> int )
+
 	let lua = lua::New();
 	lua.state.do_str("
 		function add(a, b)
@@ -30,10 +31,10 @@ fn test_add() {
 	assert!(lua.state.get_top() == 0);
 }
 
-lua_fn!( concat(a: &str, b: &str) -> ~str )
-
 #[test]
 fn test_concat() {
+	lua_fn!( concat(a: &str, b: &str) -> ~str )
+
 	let lua = lua::New();
 	lua.state.do_str("
 		function concat(a, b)
@@ -44,10 +45,10 @@ fn test_concat() {
 	assert!(lua.state.get_top() == 0);
 }
 
-lua_fn!( reverseplus(a: ~[float], b: int) -> ~[float] )
-
 #[test]
 fn test_reverseplus() {
+	lua_fn!( reverseplus(a: ~[float], b: int) -> ~[float] )
+
 	let lua = lua::New();
 	lua.state.open_libs();
 
@@ -76,10 +77,10 @@ fn test_reverseplus() {
 	}
 }
 
-lua_fn!( swapper(m: HashMap<~str, float>) -> HashMap<float, ~str> )
-
 #[test]
 fn test_swapper() {
+	lua_fn!( swapper(m: HashMap<~str, float>) -> HashMap<float, ~str> )
+
 	let lua = lua::New();
 	lua.state.open_libs();
 
@@ -107,14 +108,14 @@ fn test_swapper() {
 	assert!(*ret.get(&51.5) == ~"sis");
 }
 
-lua_struct!(
-	Foo:
-		bar: ~str,
-		qwe: int
-)
-
 #[test]
 fn test_lua_struct() {
+	lua_struct!(
+		Foo:
+			bar: ~str,
+			qwe: int
+	);
+
 	let lua = lua::New();
 
 	let foo = Foo::Foo{
