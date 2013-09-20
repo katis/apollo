@@ -248,7 +248,7 @@ impl State {
 			luac::LUA_ERRSYNTAX => Syntax(msg),
 			luac::LUA_ERRMEM    => MemAlloc(msg),
 			luac::LUA_ERRERR    => ErrFunc(msg),
-			_ => Unknown
+			_ => Unknown(msg)
 		};
 		return err;
 	}
@@ -336,7 +336,7 @@ pub enum LuaErr {
 	Syntax(~str),
 	MemAlloc(~str),
 	ErrFunc(~str),
-	Unknown
+	Unknown(~str)
 }
 
 impl ToStr for LuaErr {
@@ -347,7 +347,7 @@ impl ToStr for LuaErr {
 			Syntax(ref msg)   => fmt!("Lua syntax error: %s", *msg),
 			MemAlloc(ref msg) => fmt!("Lua memory allocation error: %s", *msg),
 			ErrFunc(ref msg)  => fmt!("Lua error handler error: %s", *msg),
-			Unknown           => fmt!("Lua unknown error"),
+			Unknown(ref msg)  => fmt!("Lua error: %s", *msg),
 		}
 	}
 }
