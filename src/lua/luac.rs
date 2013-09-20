@@ -38,6 +38,7 @@ extern {
 
 	fn luaL_openlibs(L: *lua_State);
 	fn luaL_loadfile(L: *lua_State, filename: *c_char) -> c_int;
+	fn luaL_loadstring(L: *lua_State, s: *c_char) -> c_int;
 
 	fn lua_getfield(L: *lua_State, index: c_int, name: *c_char);
 	fn lua_pcall(L: *lua_State, nargs: c_int, nresults: c_int, errfunc: c_int) -> c_int;

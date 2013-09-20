@@ -113,6 +113,15 @@ impl State {
 	}
 
 	#[fixed_stack_segment]
+	pub fn do_str(&self, s: &str) {
+		unsafe {
+			s.with_c_str( |cs| luac::luaL_loadstring(self.state, cs) );
+		}
+
+		self.pcall(0, luac::LUA_MULTRET as int, 0);
+	}
+
+	#[fixed_stack_segment]
 	pub fn insert(&self, index: int) {
 		unsafe {
 			luac::lua_insert(self.state, index as c_int);
