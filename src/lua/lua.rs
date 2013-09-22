@@ -26,6 +26,74 @@ impl Lua {
 		self.state.pop(1);
 		return v;
 	}
+	
+	pub fn table_iter<'a, K: LuaTo, V: LuaTo>(&'a self, index: int) -> LuaTableIterator<'a, K, V> {
+		match self.state.index_type(index) {
+			state::Table => {},
+			_ => { fail!(fmt!("Lua.table_iter() failed, value at index %d is not a table", index)) }
+		};
+		LuaTableIterator{ lua: self, index: index, started: false, closed: false }
+	}
+
+	pub fn arr_iter<'a, T: LuaTo>(&'a self, index: int) -> LuaArrayIterator<'a, T> {
+		match self.state.index_type(index) {
+			state::Table => {},
+			_ => { fail!(fmt!("Lua.arr_iter() failed, value at index %d is not a table", index)) }
+		};
+		LuaArrayIterator{ lua: self, index: index, started: false, closed: false }
+	}
+}
+
+pub struct LuaArrayIterator<'self, V> {
+	priv lua: &'self Lua,
+	priv index: int,
+	priv started: bool,
+	priv closed: bool
+}
+
+impl<'self, T: LuaTo> Iterator<T> for LuaArrayIterator<'self, T> {
+	fn next(&mut self) -> Option<T> {
+		if self.closed {
+			return None;
+		}
+		if !self.started {
+			self.lua.state.push_nil();
+			self.started = true;
+		}
+		if !self.lua.state.next(self.index - 1) {
+			self.closed = true;
+			return None;
+		}
+		let ret: T = self.lua.i_to(-1);
+		self.lua.state.pop(1);
+		return Some(ret);
+	}
+}
+
+pub struct LuaTableIterator<'self, K, V> {
+	priv lua: &'self Lua,
+	priv index: int,
+	priv started: bool,
+	priv closed: bool
+}
+
+impl<'self, K: LuaTo, V: LuaTo> Iterator<(K, V)> for LuaTableIterator<'self, K, V> {
+	fn next(&mut self) -> Option<(K, V)> {
+		if self.closed {
+			return None;
+		}
+		if !self.started {
+			self.lua.state.push_nil();
+			self.started = true;
+		}
+		if !self.lua.state.next(self.index - 1) {
+			self.closed = true;
+			return None;
+		}
+		let ret: (K, V) = (self.lua.i_to(-2), self.lua.i_to(-1));
+		self.lua.state.pop(1);
+		return Some(ret);
+	}
 }
 
 pub trait LuaPush {

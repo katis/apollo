@@ -153,3 +153,40 @@ fn test_lua_closure() {
 	assert!(lua.state.get_top() == 0);
 	assert!(foobar == ~"foobar");
 }
+
+#[test]
+fn test_lua_table_iter() {
+	let lua = lua::New();
+
+	let mut m: HashMap<~str, float> = HashMap::new();
+	m.swap(~"foi", 1.01);
+	m.swap(~"tats", 74.75);
+	m.swap(~"sis", 51.5);
+
+	lua.push(m.clone());
+
+	for kv in lua.table_iter::<~str, float>(-1) {
+		match kv {
+			(k, v) => {
+				assert!(*m.get(&k) == v);
+			}
+		};
+	}
+	lua.state.pop(1);
+}
+
+#[test]
+fn test_lua_array_iter() {
+	let lua = lua::New();
+
+	let vect = ~[~"qwe", ~"ads", ~"zxc"];
+
+	lua.push(vect.clone());
+
+	let mut i = 0;
+	for v in lua.arr_iter::<~str>(-1) {
+		assert!(vect[i] == v);
+		i += 1;
+	}
+	lua.state.pop(1);
+}
