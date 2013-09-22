@@ -130,3 +130,22 @@ fn test_lua_struct() {
 	assert!(foo2.bar == ~"barbarbar");
 	assert!(foo2.qwe == 1234);
 }
+
+#[test]
+fn test_lua_closure() {
+	let lua = lua::New();
+	lua.state.do_str("
+		function concat(a, b)
+			return a .. b
+		end
+	");
+
+	let concat = lua_closure!(lua.concat |a: &str, b: &str| -> ~str);
+	let foobar = concat("foo", "bar");
+	assert!(lua.state.get_top() == 0);
+	assert!(foobar == ~"foobar");
+
+	let barfoo = concat("bar", "foo");
+	assert!(lua.state.get_top() == 0);
+	assert!(barfoo == ~"barfoo");
+}

@@ -38,6 +38,30 @@ macro_rules! lua_struct(
 	);
 )
 
+macro_rules! lua_closure(
+	($lua:ident.$func:ident | $( $arg:ident: $argty:ty),* | -> $rty:ty) => (
+		| $($arg: $argty),* | {
+			$lua.state.get_global(stringify!($func));
+			match $lua.state.index_type($lua.state.get_top()) {
+				lua::Function => {},
+				_ => { fail!(fmt!("unknown function %s", stringify!($func))); }
+			}
+
+			let mut _len = 0;
+
+			$(
+				$lua.push($arg);
+				_len += 1; 
+			 )*
+
+			$lua.state.pcall(_len, 1, 0);
+
+			let _ret: $rty = $lua.pop();
+			_ret
+		}
+	)
+)
+
 macro_rules! lua_fn(
 	($func:ident($( $arg:ident: $argty:ty ),* ) -> $rty:ty) => (
 		fn $func ( $( $arg: $argty, )* _lua: &lua::Lua ) -> $rty {
