@@ -145,10 +145,10 @@ fn test_lua_closure() {
 	");
 	
 	let s: ~[int] = ~[30, 10, 20];
-	assert!(s.iter().fold(0, lua_closure!(lua.add |a: int, x: &int| -> int)) == 60);
+	assert!(s.iter().fold(0, lua_fn!(lua.add |a: int, x: &int| -> int)) == 60);
 	assert!(lua.state.get_top() == 0);
 
-	let concat = lua_closure!(lua.concat |a: &str, b: &str| -> ~str);
+	let concat = lua_fn!(lua.concat |a: &str, b: &str| -> ~str);
 	let foobar = concat("foo", "bar");
 	assert!(lua.state.get_top() == 0);
 	assert!(foobar == ~"foobar");

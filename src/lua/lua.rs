@@ -42,6 +42,12 @@ impl LuaPush for float {
 	}
 }
 
+impl<'self> LuaPush for &'self float {
+	fn lua_push(&self, state: &state::State) {
+		state.push_float(**self);
+	}
+}
+
 impl LuaTo for float {
 	fn lua_to(state: &state::State, index: int) -> float {
 		return state.to_float(index);
