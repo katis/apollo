@@ -54,6 +54,12 @@ impl LuaPush for int {
 	}
 }
 
+impl<'self> LuaPush for &'self int {
+	fn lua_push(&self, state: &state::State) {
+		state.push_int(**self);
+	}
+}
+
 impl LuaTo for int {
 	fn lua_to(state: &state::State, index: int) -> int {
 		return state.to_int(index);
