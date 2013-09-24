@@ -13,20 +13,36 @@ pub fn New() -> ~Lua {
 }
 
 impl Lua {
+	///Push a value to the Lua stack.
 	pub fn push<T: LuaPush>(&self, p: T) {
 		p.lua_push(self);
 	}
 
+	/**
+	 * Get a value from a Lua stack index.
+	 *
+	 * Fails if the value in index is the wrong type.
+	 */
 	pub fn i_to<T: LuaTo>(&self, index: int) -> T {
 		LuaTo::lua_to(self, index)
 	}
 
+	/**
+	 * Pop a top value from the stack and returns it.
+	 *
+	 * Fails if the value in the top index is the wrong type.
+	 */
 	pub fn pop<T: LuaTo>(&self) -> T {
 		let v: T = self.i_to(-1);
 		self.state.pop(1);
 		return v;
 	}
 	
+	/**
+	 * Get a (Key, Value) iterator for the table at stack index.
+	 *
+	 * Fails if the value in index is not a table.
+	 */
 	pub fn table_iter<'a, K: LuaTo, V: LuaTo>(&'a self, index: int) -> LuaTableIterator<'a, K, V> {
 		match self.state.index_type(index) {
 			state::TTable => {},
@@ -35,6 +51,11 @@ impl Lua {
 		LuaTableIterator{ lua: self, index: index, started: false, closed: false }
 	}
 
+	/**
+	 * Get a value iterator for the table at stack index.
+	 *
+	 * Fails if the value in index is not a table.
+	 */
 	pub fn arr_iter<'a, T: LuaTo>(&'a self, index: int) -> LuaArrayIterator<'a, T> {
 		match self.state.index_type(index) {
 			state::TTable => {},
@@ -43,6 +64,7 @@ impl Lua {
 		LuaArrayIterator{ lua: self, index: index, started: false, closed: false }
 	}
 
+	/// Get a borrowed reference to the Lua state.
 	pub fn state<'a>(&'a self) -> &'a ~state::State {
 		&self.state
 	}
