@@ -32,15 +32,15 @@ impl State {
 			let t = luac::lua_type(self.state, index as c_int);
 			return match t {
 				luac::LUA_TNONE          => TNone,
-				luac::LUA_TNIL           => Nil,
-				luac::LUA_TBOOLEAN       => Boolean,
-				luac::LUA_TLIGHTUSERDATA => LightUserData,
-				luac::LUA_TNUMBER        => Number,
-				luac::LUA_TSTRING        => String,
-				luac::LUA_TTABLE         => Table,
-				luac::LUA_TFUNCTION      => Function,
-				luac::LUA_TUSERDATA      => UserData,
-				luac::LUA_TTHREAD        => Thread,
+				luac::LUA_TNIL           => TNil,
+				luac::LUA_TBOOLEAN       => TBoolean,
+				luac::LUA_TLIGHTUSERDATA => TLightUserData,
+				luac::LUA_TNUMBER        => TNumber,
+				luac::LUA_TSTRING        => TString,
+				luac::LUA_TTABLE         => TTable,
+				luac::LUA_TFUNCTION      => TFunction,
+				luac::LUA_TUSERDATA      => TUserData,
+				luac::LUA_TTHREAD        => TThread,
 				i                        => TUnknown(i as int),
 			}
 		}
@@ -49,15 +49,15 @@ impl State {
 	pub fn index_str(&self, index: int) -> ~str {
 		match self.index_type(index) {
 			TNone         => ~"none: none",
-			Nil           => ~"nil: nil",
-			Boolean       => fmt!("bool: %?", self.to_bool(index)),
-			LightUserData => ~"light user data",
-			Number        => fmt!("number: %f", self.to_float(index)),
-			String        => fmt!("string: %s", self.to_str(index)),
-			Table         => ~"table",
-			Function      => ~"function",
-			UserData      => ~"userdata",
-			Thread        => ~"thread",
+			TNil           => ~"nil: nil",
+			TBoolean       => fmt!("bool: %?", self.to_bool(index)),
+			TLightUserData => ~"light user data",
+			TNumber        => fmt!("number: %f", self.to_float(index)),
+			TString        => fmt!("string: %s", self.to_str(index)),
+			TTable         => ~"table",
+			TFunction      => ~"function",
+			TUserData      => ~"userdata",
+			TThread        => ~"thread",
 			TUnknown(i)   => fmt!("unknown: %d", i)
 		}
 	}
@@ -189,7 +189,7 @@ impl State {
 	pub fn to_bool(&self, index: int) -> bool {
 		unsafe {
 			match self.index_type(index) {
-				Boolean => {
+				TBoolean => {
 					return luac::lua_toboolean(self.state, index as c_int) != 0
 				},
 				t => {
@@ -203,7 +203,7 @@ impl State {
 	pub fn to_int(&self, index: int) -> int {
 		unsafe {
 			match self.index_type(index) {
-				Number => {
+				TNumber => {
 					return luac::lua_tointeger(self.state, index as c_int) as int;
 				},
 				t => {
@@ -217,7 +217,7 @@ impl State {
 	pub fn to_str(&self, index: int) -> ~str{
 		unsafe {
 			match self.index_type(index) {
-				String => {
+				TString => {
 					let strPtr = luac::lua_tolstring(self.state, index as c_int, ptr::null());
 					return raw::from_c_str(strPtr);
 				},
@@ -232,7 +232,7 @@ impl State {
 	pub fn to_float(&self, index: int) -> float {
 		unsafe {
 			match self.index_type(index) {
-				Number => {
+				TNumber => {
 					return luac::lua_tonumber(self.state, index as c_int) as float;
 				},
 				t => {
@@ -309,15 +309,15 @@ impl Drop for State {
 
 pub enum LuaType {
 	TNone,
-	Nil,
-	Boolean,
-	LightUserData,
-	Number,
-	String,
-	Table,
-	Function,
-	UserData,
-	Thread,
+	TNil,
+	TBoolean,
+	TLightUserData,
+	TNumber,
+	TString,
+	TTable,
+	TFunction,
+	TUserData,
+	TThread,
 	TUnknown(int)
 }
 
@@ -325,15 +325,15 @@ impl ToStr for LuaType {
 	fn to_str(&self) -> ~str {
 		match *self {
 			TNone           => ~"none",
-			Nil             => ~"nil",
-			Boolean         => ~"boolean",
-			LightUserData   => ~"light user data",
-			Number          => ~"number",
-			String          => ~"string",
-			Table           => ~"table",
-			Function        => ~"function",
-			UserData        => ~"user data",
-			Thread          => ~"thread",
+			TNil             => ~"nil",
+			TBoolean         => ~"boolean",
+			TLightUserData   => ~"light user data",
+			TNumber          => ~"number",
+			TString          => ~"string",
+			TTable           => ~"table",
+			TFunction        => ~"function",
+			TUserData        => ~"user data",
+			TThread          => ~"thread",
 			TUnknown(ref t) => fmt!("unknown: %d", *t)
 		}
 	}

@@ -9,24 +9,26 @@ macro_rules! lua_struct(
 			}
 
 			impl LuaPush for $s {
-				fn lua_push(&self, state: &State) {
+				fn lua_push(&self, lua: &Lua) {
+					let state = lua.state();
 					state.new_table();
 
 					$(
 					state.push_str(stringify!($field));
-					self.$field.lua_push(state);
+					self.$field.lua_push(lua);
 					state.raw_set(-3);
 					)+
 				}
 			}
 
 			impl LuaTo for $s {
-				fn lua_to(state: &State, index: int) -> $s {
+				fn lua_to(lua: &Lua, index: int) -> $s {
+					let state = lua.state();
 					$s {
 						$(
 						$field: {
 							state.get_field(index, stringify!($field));
-							let r = LuaTo::lua_to(state, index);
+							let r = LuaTo::lua_to(lua, index);
 							state.pop(1);
 							r
 						},
@@ -42,9 +44,9 @@ macro_rules! lua_fn(
 	// function with a return value
 	($func:ident($( $arg:ident: $argty:ty ),* ) -> $rty:ty) => (
 		fn $func ( $( $arg: $argty, )* _lua: &lua::Lua ) -> $rty {
-			_lua.state.get_global(stringify!($func));
-			match _lua.state.index_type(_lua.state.get_top()) {
-				lua::Function => {},
+			_lua.state().get_global(stringify!($func));
+			match _lua.state().index_type(_lua.state().get_top()) {
+				lua::TFunction => {},
 				_ => { fail!(fmt!("unknown function %s", stringify!($func))); }
 			}
 
@@ -55,7 +57,7 @@ macro_rules! lua_fn(
 				_len += 1; 
 			 )*
 
-			_lua.state.pcall(_len, 1, 0);
+			_lua.state().pcall(_len, 1, 0);
 
 			let _ret: $rty = _lua.pop();
 			return _ret;
@@ -64,7 +66,7 @@ macro_rules! lua_fn(
 	// function with no return value
 	($func:ident($( $arg:ident: $argty:ty ),* ) ) => (
 		fn $func ( $( $arg: $argty, )* _lua: &lua::Lua ) {
-			_lua.state.get_global(stringify!($func));
+			_lua.state().get_global(stringify!($func));
 			let mut _len = 0;
 
 			$(
@@ -72,15 +74,15 @@ macro_rules! lua_fn(
 				_len += 1;
 			)*
 
-			_lua.state.pcall(_len, 0, 0);
+			_lua.state().pcall(_len, 0, 0);
 		}
 	);
 	// Closure with return value
 	($lua:ident.$func:ident | $( $arg:ident: $argty:ty),* | -> $rty:ty) => (
 		| $($arg: $argty),* | {
-			$lua.state.get_global(stringify!($func));
-			match $lua.state.index_type($lua.state.get_top()) {
-				lua::Function => {},
+			$lua.state().get_global(stringify!($func));
+			match $lua.state().index_type($lua.state().get_top()) {
+				lua::TFunction => {},
 				_ => { fail!(fmt!("unknown function %s", stringify!($func))); }
 			}
 
@@ -91,7 +93,7 @@ macro_rules! lua_fn(
 				_len += 1; 
 			 )*
 
-			$lua.state.pcall(_len, 1, 0);
+			$lua.state().pcall(_len, 1, 0);
 
 			let _ret: $rty = $lua.pop();
 			_ret
