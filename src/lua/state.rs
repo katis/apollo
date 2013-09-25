@@ -18,6 +18,12 @@ pub fn NewState() -> ~State {
 }
 
 impl State {
+	#[fixed_stack_segment] #[inline(never)]
+	pub fn close(&self) {
+		unsafe {
+			ffi::lua_close(self.state);
+		}
+	}
 
 	#[fixed_stack_segment] #[inline(never)]
 	pub fn open_libs(&self) {
@@ -294,15 +300,6 @@ impl State {
 	pub fn push_nil(&self) {
 		unsafe {
 			ffi::lua_pushnil(self.state);
-		}
-	}
-}
-
-impl Drop for State {
-	#[fixed_stack_segment] #[inline(never)]
-	fn drop(&mut self) {
-		unsafe {
-			ffi::lua_close(self.state);
 		}
 	}
 }

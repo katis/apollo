@@ -70,6 +70,14 @@ impl Lua {
 	}
 }
 
+#[unsafe_destructor]
+impl Drop for Lua {
+	#[fixed_stack_segment] #[inline(never)]
+	fn drop(&mut self) {
+		self.state.close();
+	}
+}
+
 pub struct LuaArrayIterator<'self, V> {
 	priv lua: &'self Lua,
 	priv index: int,
