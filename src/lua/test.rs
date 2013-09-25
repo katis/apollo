@@ -1,5 +1,6 @@
 use std::hashmap::HashMap;
 use std::libc::{c_int};
+use lua::{LuaTo,LuaPush};
 mod macros;
 mod lua;
 mod ffi;
@@ -209,6 +210,27 @@ fn test_push_function() {
 		}
 		return 1;
 	}
+
+	lua.state().do_str("
+	function callFunc(f)
+		return f(15.5, 16.6, 18.2)
+	end
+	");
+
+	lua_fn!( callFunc(cb: lua::LuaCallback) -> float );
+	let result = callFunc(add, lua);
+
+	assert!(result == (15.5 + 16.6 + 18.2));
+	assert!(lua.state().get_top() == 0);
+}
+
+#[test]
+fn test_lua_cb() {
+	let lua = lua::New();
+
+	lua_cb!(add(a: float, b: float, c: float) -> float {
+		a + b + c
+	}); 
 
 	lua.state().do_str("
 	function callFunc(f)

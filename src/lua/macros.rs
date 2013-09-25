@@ -98,3 +98,21 @@ macro_rules! lua_fn(
 		}
 	);
 )
+
+macro_rules! lua_cb(
+	($func:ident ( $($arg:ident: $aty:ty ),* ) -> $rty:ty
+		$bl:block
+	) => (
+		extern "C" fn $func(_raw_state: *ffi::lua_State) -> c_int {
+			do lua::with_state(_raw_state) |state| {
+				let mut _i = 1;
+				$(
+					let $arg: $aty = LuaTo::lua_to(state, _i); _i += 1;
+				)*
+				let _ret: $rty = {if true $bl else { fail!("lua_cb! impossible") } };
+				_ret.lua_push(state);
+			}
+			return 1;
+		}
+	);
+)
