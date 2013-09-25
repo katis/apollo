@@ -9,26 +9,24 @@ macro_rules! lua_struct(
 			}
 
 			impl LuaPush for $s {
-				fn lua_push(&self, lua: &Lua) {
-					let state = lua.state();
+				fn lua_push(&self, state: &State) {
 					state.new_table();
 
 					$(
 					state.push_str(stringify!($field));
-					self.$field.lua_push(lua);
+					self.$field.lua_push(state);
 					state.raw_set(-3);
 					)+
 				}
 			}
 
 			impl LuaTo for $s {
-				fn lua_to(lua: &Lua, index: int) -> $s {
-					let state = lua.state();
+				fn lua_to(state: &State, index: int) -> $s {
 					$s {
 						$(
 						$field: {
 							state.get_field(index, stringify!($field));
-							let r = LuaTo::lua_to(lua, index);
+							let r = LuaTo::lua_to(state, index);
 							state.pop(1);
 							r
 						},

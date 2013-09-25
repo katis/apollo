@@ -16,7 +16,6 @@ fn test_noret() {
 	assert!(lua.state().get_top() == 0);
 }
 
-
 #[test]
 fn test_add() {
 	lua_fn!( add(a: int, b: int) -> int )
