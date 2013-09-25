@@ -16,7 +16,6 @@ pub static LUA_ENVIRONINDEX:  c_int = -10001;
 pub static LUA_GLOBALSINDEX:  c_int = -10002;
 
 // Lua Types
-
 pub static LUA_TNONE:          c_int = -1;
 pub static LUA_TNIL:           c_int = 0;
 pub static LUA_TBOOLEAN:       c_int = 1;
@@ -30,6 +29,7 @@ pub static LUA_TTHREAD:        c_int = 8;
 
 pub type lua_State = c_void;
 pub type lua_Number = c_double;
+pub type LuaCallback = extern "C" fn(*lua_State) -> c_int;
 
 #[link_args = "-lluajit-5.1"]
 extern {
@@ -60,6 +60,7 @@ extern {
 	fn lua_pushnumber(L: *lua_State, number: lua_Number);
 	fn lua_pushlstring(L: *lua_State, string: *c_char, len: size_t);
 	fn lua_pushstring(L: *lua_State, string: *c_char);
+	fn lua_pushcclosure(L: *lua_State, cb: LuaCallback, upvals: c_int);
 	fn lua_pushnil(L: *lua_State);
 
 	fn lua_isfunction(L: *lua_State, index: c_int) -> c_int;

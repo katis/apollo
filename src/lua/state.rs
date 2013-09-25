@@ -17,6 +17,10 @@ pub fn NewState() -> ~State {
 	}
 }
 
+pub fn with_state<'r>(raw: *ffi::lua_State, f: &'r fn(&State)) {
+	f(&State{ state: raw });
+}
+
 impl State {
 	#[fixed_stack_segment] #[inline(never)]
 	pub fn close(&self) {
@@ -293,6 +297,20 @@ impl State {
 	pub fn push_str(&self, s: &str) {
 		unsafe {
 			s.with_c_str( |cs| ffi::lua_pushstring(self.state, cs));
+		}
+	}
+
+	#[fixed_stack_segment] #[inline(never)]
+	pub fn push_function(&self, f: ffi::LuaCallback) {
+		unsafe {
+			ffi::lua_pushcclosure(self.state, f, 0);
+		}
+	}
+
+	#[fixed_stack_segment] #[inline(never)]
+	pub fn push_closure(&self, cb: ffi::LuaCallback, upvals: int) {
+		unsafe {
+			ffi::lua_pushcclosure(self.state, cb, upvals as c_int);
 		}
 	}
 

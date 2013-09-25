@@ -1,6 +1,8 @@
 use std::hashmap::HashMap;
+use std::libc::{c_int};
 mod macros;
 mod lua;
+mod ffi;
 
 #[test]
 fn test_noret() {
@@ -188,4 +190,35 @@ fn test_lua_array_iter() {
 		i += 1;
 	}
 	lua.state().pop(1);
+}
+
+#[test]
+fn test_push_function() {
+	let lua = lua::New();
+
+	extern "C" fn add(raw_state: *ffi::lua_State) -> c_int {
+		do lua::with_state(raw_state) |state| {
+			let argn = state.get_top();
+			let mut sum = 0.0;
+			let mut i = 1;
+			while i <= argn {
+				sum += state.to_float(i);
+				i += 1;
+			}
+			state.push_float(sum);
+		}
+		return 1;
+	}
+
+	lua.state().do_str("
+	function callFunc(f)
+		return f(15.5, 16.6, 18.2)
+	end
+	");
+
+	lua_fn!( callFunc(cb: lua::LuaCallback) -> float );
+	let result = callFunc(add, lua);
+
+	assert!(result == (15.5 + 16.6 + 18.2));
+	assert!(lua.state().get_top() == 0);
 }

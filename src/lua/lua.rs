@@ -1,4 +1,5 @@
 pub use self::state::*;
+pub use ffi::LuaCallback;
 use std::hashmap::HashMap;
 mod state;
 
@@ -264,6 +265,12 @@ impl<K: LuaTo + Hash + Eq, V: LuaTo> LuaTo for HashMap<K, V> {
 			m.swap(k, v);
 		}
 		return m;
+	}
+}
+
+impl LuaPush for LuaCallback {
+	fn lua_push(&self, state: &state::State) {
+		state.push_function(*self);
 	}
 }
 
