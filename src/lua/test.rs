@@ -15,7 +15,7 @@ fn test_noret() {
 			a = b
 		end
 	");
-	noret(12, 48.23, lua);
+	noret(12, 48.23, &lua);
 	assert!(lua.state().get_top() == 0);
 }
 
@@ -29,7 +29,7 @@ fn test_add() {
 			return a + b
 		end
 	");
-	assert!(add(20, 15, lua) == 35);
+	assert!(add(20, 15, &lua) == 35);
 	assert!(lua.state().get_top() == 0);
 }
 
@@ -43,7 +43,7 @@ fn test_concat() {
 			return a .. b
 		end
 	");
-	assert!(concat("foo", "bar", lua) == ~"foobar");
+	assert!(concat("foo", "bar", &lua) == ~"foobar");
 	assert!(lua.state().get_top() == 0);
 }
 
@@ -68,7 +68,7 @@ fn test_reverseplus() {
 	");
 
 	let result = ~[30.9, 15.2, 20.5];
-	let ret = reverseplus(~[10.5, 5.2, 20.9], 10, lua);
+	let ret = reverseplus(~[10.5, 5.2, 20.9], 10, &lua);
 	assert!(result.len() == ret.len());
 	assert!(lua.state().get_top() == 0);
 
@@ -103,7 +103,7 @@ fn test_swapper() {
 	m.swap(~"tats", 74.75);
 	m.swap(~"sis", 51.5);
 
-	let ret = swapper(m, lua);
+	let ret = swapper(m, &lua);
 	assert!(lua.state().get_top() == 0);
 	assert!(*ret.get(&1.01) == ~"foi");
 	assert!(*ret.get(&74.75) == ~"tats");
@@ -127,7 +127,7 @@ fn test_module_fn() {
 		}
 	");
 
-	assert!(add(10, 20, lua) == 30);
+	assert!(add(10, 20, &lua) == 30);
 	assert!(lua.state().get_top() == 0);
 }
 
@@ -239,7 +239,7 @@ fn test_push_function() {
 	");
 
 	lua_fn!( callFunc(cb: lua::LuaCallback) -> float );
-	let result = callFunc(add, lua);
+	let result = callFunc(add, &lua);
 
 	assert!(result == (15.5 + 16.6 + 18.2));
 	assert!(lua.state().get_top() == 0);
@@ -260,7 +260,7 @@ fn test_lua_cb() {
 	");
 
 	lua_fn!( callFunc(cb: lua::LuaCallback) -> float );
-	let result = callFunc(add, lua);
+	let result = callFunc(add, &lua);
 
 	assert!(result == (15.5 + 16.6 + 18.2));
 	assert!(lua.state().get_top() == 0);

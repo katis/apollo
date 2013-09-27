@@ -45,7 +45,7 @@ macro_rules! lua_fn(
 			_lua.state().get_global(stringify!($func));
 			match _lua.state().index_type(_lua.state().get_top()) {
 				lua::TFunction => {},
-				_ => { fail!(fmt!("unknown function %s", stringify!($func))); }
+				_ => { fail!(fmt!("lua_fn error: unknown function %s", stringify!($func))); }
 			}
 
 			let mut _len = 0;
@@ -80,7 +80,7 @@ macro_rules! lua_fn(
 			match _lua.state().index_type(-1) {
 				lua::TFunction => {},
 				_ => {
-					fail!(fmt!("unknown function %s",
+					fail!(fmt!("lua_fn error: unknown function %s",
 						$( stringify!($table) + "." + )+ stringify!($func)));
 				}
 			}
@@ -119,7 +119,7 @@ macro_rules! lua_fn(
 			$lua.state().get_global(stringify!($func));
 			match $lua.state().index_type($lua.state().get_top()) {
 				lua::TFunction => {},
-				_ => { fail!(fmt!("unknown function %s", stringify!($func))); }
+				_ => { fail!(fmt!("lua_fn error: unknown function %s", stringify!($func))); }
 			}
 
 			let mut _len = 0;

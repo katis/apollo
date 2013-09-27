@@ -4,11 +4,11 @@ use std::hashmap::HashMap;
 mod state;
 
 struct Lua {
-	priv state: ~state::State
+	priv state: state::State
 }
 
-pub fn New() -> ~Lua {
-	~Lua {
+pub fn New() -> Lua {
+	Lua {
 		state: state::NewState()
 	}
 }
@@ -16,7 +16,7 @@ pub fn New() -> ~Lua {
 impl Lua {
 	///Push a value to the Lua stack.
 	pub fn push<T: LuaPush>(&self, p: T) {
-		p.lua_push(self.state);
+		p.lua_push(&self.state);
 	}
 
 	/**
@@ -25,7 +25,7 @@ impl Lua {
 	 * Fails if the value in index is the wrong type.
 	 */
 	pub fn i_to<T: LuaTo>(&self, index: int) -> T {
-		LuaTo::lua_to(self.state, index)
+		LuaTo::lua_to(&self.state, index)
 	}
 
 	/**
@@ -66,7 +66,7 @@ impl Lua {
 	}
 
 	/// Get a borrowed reference to the Lua state.
-	pub fn state<'a>(&'a self) -> &'a ~state::State {
+	pub fn state<'a>(&'a self) -> &'a state::State {
 		&self.state
 	}
 }

@@ -11,10 +11,10 @@ struct State {
 }
 
 #[fixed_stack_segment] #[inline(never)]
-pub fn NewState() -> ~State {
+pub fn NewState() -> State {
 	unsafe {
 		let state = ffi::luaL_newstate();
-		return ~State { state: state };
+		return State { state: state };
 	}
 }
 
