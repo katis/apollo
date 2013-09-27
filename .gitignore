@@ -4,4 +4,3 @@ main
 build/
 .rust/
 test
-lua

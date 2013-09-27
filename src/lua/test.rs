@@ -111,6 +111,27 @@ fn test_swapper() {
 }
 
 #[test]
+fn test_module_fn() {
+	lua_fn!( foo::math.add(a: int, b: int) -> int );
+
+	let lua = lua::New();
+	lua.state().open_libs();
+
+	lua.state().do_str("
+		foo = {
+			math = {
+				add = function(a, b)
+					return a + b
+				end
+			}
+		}
+	");
+
+	assert!(add(10, 20, lua) == 30);
+	assert!(lua.state().get_top() == 0);
+}
+
+#[test]
 fn test_lua_struct() {
 	lua_struct!(
 		Foo:

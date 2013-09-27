@@ -3,6 +3,7 @@ use std::libc::{c_int, c_double};
 use std::str::raw;
 use std::ptr;
 use std::c_str::ToCStr;
+pub use self::ffi::*;
 mod ffi;
 
 struct State {

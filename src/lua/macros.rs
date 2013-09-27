@@ -61,6 +61,44 @@ macro_rules! lua_fn(
 			return _ret;
 		}
 	);
+	// function with a return value
+	( $($table:ident)::+ . $func:ident($( $arg:ident: $argty:ty ),* ) -> $rty:ty) => (
+		fn $func ( $( $arg: $argty, )* _lua: &lua::Lua ) -> $rty {
+			let mut _i = lua::LUA_GLOBALSINDEX as int;
+			let _top = _lua.state().get_top();
+
+			$(
+				match _lua.state().index_type(_i) {
+					lua::TTable => {},
+					_ => { fail!(fmt!("lua_fn error: table %s not found", stringify!($table))); }
+				}
+				_lua.state().get_field(_i, stringify!($table));
+				_i = -1;
+			)+
+
+			_lua.state().get_field(_i, stringify!($func));
+			match _lua.state().index_type(-1) {
+				lua::TFunction => {},
+				_ => {
+					fail!(fmt!("unknown function %s",
+						$( stringify!($table) + "." + )+ stringify!($func)));
+				}
+			}
+
+			let mut _len = 0;
+
+			$(
+				_lua.push($arg);
+				_len += 1; 
+			 )*
+
+			_lua.state().pcall(_len, 1, 0);
+
+			let _ret: $rty = _lua.pop();
+			_lua.state().set_top(_top);
+			return _ret;
+		}
+	);
 	// function with no return value
 	($func:ident($( $arg:ident: $argty:ty ),* ) ) => (
 		fn $func ( $( $arg: $argty, )* _lua: &lua::Lua ) {
