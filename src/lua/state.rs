@@ -150,6 +150,17 @@ impl State {
 		}
 	}
 
+	pub fn set_global(&self, name: &str) {
+		self.set_field(ffi::LUA_GLOBALSINDEX as int, name);
+	}
+
+	#[fixed_stack_segment] #[inline(never)]
+	pub fn set_field(&self, index: int, name: &str) {
+		unsafe {
+			name.with_c_str( |n| ffi::lua_setfield(self.state, index as c_int, n) );
+		}
+	}
+
 	#[fixed_stack_segment] #[inline(never)]
 	pub fn set_table(&self, index: int) {
 		unsafe {

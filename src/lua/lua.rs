@@ -65,6 +65,13 @@ impl Lua {
 		LuaArrayIterator{ lua: self, index: index, started: false, closed: false }
 	}
 
+	pub fn module<'l>(&'l self, mod_name: &str, def_fn: &fn(&LuaModule<'l>)) {
+		self.state().new_table();
+		let m = LuaModule{lua: self, table_i: self.state().get_top()};
+		def_fn(&m);
+		self.state().set_global(mod_name);
+	}
+
 	/// Get a borrowed reference to the Lua state.
 	pub fn state<'a>(&'a self) -> &'a state::State {
 		&self.state
@@ -76,6 +83,26 @@ impl Drop for Lua {
 	#[fixed_stack_segment] #[inline(never)]
 	fn drop(&mut self) {
 		self.state.close();
+	}
+}
+
+pub struct LuaModule<'self> {
+	priv lua: &'self Lua,
+	priv table_i: int
+}
+
+impl<'self> LuaModule<'self> {
+	pub fn namespace(&self, name: &str, def_fn: &fn(&LuaModule<'self>)) {
+		self.lua.state().new_table();
+		let ns = LuaModule{ lua: self.lua, table_i: self.lua.state().get_top() };
+		def_fn(&ns);
+		self.lua.state().set_field(self.table_i, name);
+	}
+
+	pub fn def<T: LuaPush>(&self, name: &str, val: T) {
+		self.lua.push(name);
+		self.lua.push(val);
+		self.lua.state().raw_set(-3);
 	}
 }
 

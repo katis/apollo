@@ -52,6 +52,7 @@ extern {
 	fn lua_settable(L: *lua_State, index: c_int);
 	fn lua_next(L: *lua_State, index: c_int) -> c_int;
 
+	fn lua_setfield(L: *lua_State, index: c_int, name: *c_char);
 	fn lua_rawset(L: *lua_State, index: c_int);
 	fn lua_rawseti(L: *lua_State, index: c_int, n: c_int);
 

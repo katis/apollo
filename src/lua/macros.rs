@@ -154,3 +154,20 @@ macro_rules! lua_cb(
 		}
 	);
 )
+
+macro_rules! lua_def(
+	($module:ident :: $func:ident ( $( $arg:ident: $aty:ty ),* ) -> $rty:ty as $cfunc:ident ) => ({
+		extern fn $cfunc(raw_state: *ffi::lua_State) -> c_int {
+			do lua::with_state(raw_state) |state| {
+				let mut _i = 1;
+				$(
+					let $arg: $aty = LuaTo::lua_to(state, _i); _i += 1;
+				)*
+
+				$func($($arg),*).lua_push(state);
+			}
+			return 1;
+		}
+		$module.def(stringify!($func), $cfunc);
+	});
+)

@@ -1,5 +1,6 @@
 use std::hashmap::HashMap;
 use std::libc::{c_int};
+use std::local_data;
 use lua::{LuaTo,LuaPush};
 mod macros;
 mod lua;
@@ -128,6 +129,40 @@ fn test_module_fn() {
 	");
 
 	assert!(add(10, 20, &lua) == 30);
+	assert!(lua.state().get_top() == 0);
+}
+
+#[test]
+fn test_lua_mod() {
+	local_data_key!(key_test_lua_data: int);
+
+	let lua = lua::New();
+	lua.state().open_libs();
+
+	fn add(a: int, b: int) -> int {
+		local_data::set(key_test_lua_data, a + b);
+		a + b
+	}
+
+	lua.module("foo", |foo| {
+		foo.namespace("bar", |bar| {
+			bar.namespace("qwer", |qwer| {
+				lua_def!(qwer::add(a: int, b: int) -> int as c_add);
+
+				bar.def("twelve", 12);
+			})
+		})
+	});
+
+	lua.state().do_str("foo.bar.qwer.add(foo.bar.qwer.twelve, 34)");
+
+	local_data::get(key_test_lua_data, |val| {
+		match val {
+			Some(v) => { assert!(*v == 12 + 34) },
+			None => { fail!() }
+		}
+	});
+
 	assert!(lua.state().get_top() == 0);
 }
 
