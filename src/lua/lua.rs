@@ -102,7 +102,7 @@ impl<'self> LuaModule<'self> {
 	pub fn def<T: LuaPush>(&self, name: &str, val: T) {
 		self.lua.push(name);
 		self.lua.push(val);
-		self.lua.state().raw_set(-3);
+		self.lua.state().raw_set(self.table_i);
 	}
 }
 

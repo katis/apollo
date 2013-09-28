@@ -154,7 +154,7 @@ fn test_lua_mod() {
 		})
 	});
 
-	lua.state().do_str("foo.bar.qwer.add(foo.bar.qwer.twelve, 34)");
+	lua.state().do_str("foo.bar.qwer.add(foo.bar.twelve, 34)");
 
 	local_data::get(key_test_lua_data, |val| {
 		match val {
