@@ -1,5 +1,4 @@
 pub use self::state::*;
-pub use ffi::LuaCallback;
 use std::hashmap::HashMap;
 mod state;
 
